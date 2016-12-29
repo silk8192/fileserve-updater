@@ -13,7 +13,7 @@ public class RequestDecoder extends ReplayingDecoder<Request> {
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf in, List<Object> out) throws Exception {
         int fileId = in.readInt();
         byte priority = in.readByte();
-        out.add(new Request(fileId, priority, channelHandlerContext.channel()));
+        out.add(new Request(fileId, priority));
     }
 
 }

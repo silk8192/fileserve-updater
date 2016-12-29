@@ -5,6 +5,7 @@ import com.github.fileserve.net.Request;
 import com.github.fileserve.net.Response;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Files;
+import io.netty.channel.ChannelHandlerContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -44,7 +45,7 @@ public class ChunkDispatcherPool {
     }
 
 
-    public void submit(Request request) {
+    public void submit(Request request, ChannelHandlerContext ctx) {
         if (isStopped) {
             return;
         }
@@ -55,8 +56,8 @@ public class ChunkDispatcherPool {
         requests.add(request);
         executorService.execute(() -> {
             Request r = requests.poll();
-            logger.info("File Requested:  " + r.getFileId() + "\t" + r.getChannel().remoteAddress() + "\t" + r.getPriority().toInteger());
-            sendFile(request);
+            logger.info("File Requested:  " + r.getFileId() + "\t" + "\t" + r.getPriority().toInteger());
+            sendFile(request, ctx);
         });
     }
 
@@ -65,7 +66,7 @@ public class ChunkDispatcherPool {
      *
      * @param request The {@link Request} to respond to with chunks of a file.
      */
-    private void sendFile(Request request) {
+    private void sendFile(Request request, ChannelHandlerContext ctx) {
         int fileId = request.getFileId();
 
         /*
@@ -88,7 +89,7 @@ public class ChunkDispatcherPool {
             List<byte[]> chunks = Arrays.asList(generateChunks(compressedData, CHUNK_LENGTH));
             int finalChunk = chunks.size();
             for (byte[] chunk : chunks) {
-                executorService.submit(new DispatchTask(fileId, (short) ++chunkId, finalChunk, chunk, request));
+                executorService.submit(new DispatchTask(fileId, (short) ++chunkId, finalChunk, chunk, ctx));
             }
         } catch (IOException | NullPointerException e) {
             logger.catching(e);
@@ -105,20 +106,20 @@ public class ChunkDispatcherPool {
         private final int fileId;
         private final short chunkId;
         private final byte[] chunk;
-        private final Request request;
+        private final ChannelHandlerContext ctx;
         private int finalChunk;
 
-        public DispatchTask(int fileId, short chunkId, int finalChunk, byte[] chunk, Request request) {
+        public DispatchTask(int fileId, short chunkId, int finalChunk, byte[] chunk, ChannelHandlerContext ctx) {
             this.fileId = fileId;
             this.chunkId = chunkId;
             this.finalChunk = finalChunk;
             this.chunk = chunk;
-            this.request = request;
+            this.ctx = ctx;
         }
 
         @Override
         public void run() {
-            request.getChannel().writeAndFlush(new Response(fileId, chunkId, finalChunk, chunk));
+            ctx.writeAndFlush(new Response(fileId, chunkId, finalChunk, chunk));
         }
     }
 

@@ -1,25 +1,16 @@
 package com.github.fileserve.net;
 
-import io.netty.channel.Channel;
-
 /**
  * A one time request for a file. Requests will be replied to based on priority.
  */
 public class Request implements Comparable<Request> {
 
     private final int fileId;
-
     private final Priority priority;
 
-    /**
-     * The channel of the client that sent the Request.
-     */
-    private final Channel channel;
-
-    public Request(int fileId, byte priority, Channel channel) {
+    public Request(int fileId, byte priority) {
         this.fileId = fileId;
         this.priority = Priority.valueOf(priority);
-        this.channel = channel;
     }
 
     public int getFileId() {
@@ -41,10 +32,6 @@ public class Request implements Comparable<Request> {
                 "fileId=" + fileId +
                 ", priority=" + priority +
                 '}';
-    }
-
-    public Channel getChannel() {
-        return channel;
     }
 
     public enum Priority {

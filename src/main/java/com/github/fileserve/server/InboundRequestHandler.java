@@ -34,7 +34,7 @@ public class InboundRequestHandler extends SimpleChannelInboundHandler<Request> 
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, Request request) throws Exception {
-        chunkDispatcherPool.submit(request);
+        chunkDispatcherPool.submit(request, channelHandlerContext);
     }
 
     @Override
