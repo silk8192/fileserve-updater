@@ -5,5 +5,5 @@ package com.github.fileserve;
  */
 public class NetworkConstant {
 
-    public static final int CHUNK_LENGTH = 512;
+
 }

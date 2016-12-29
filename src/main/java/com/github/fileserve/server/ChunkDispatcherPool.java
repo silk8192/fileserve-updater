@@ -1,7 +1,6 @@
 package com.github.fileserve.server;
 
 import com.github.fileserve.FileRepository;
-import com.github.fileserve.NetworkConstant;
 import com.github.fileserve.net.Request;
 import com.github.fileserve.net.Response;
 import com.google.common.io.ByteSource;
@@ -25,7 +24,8 @@ public class ChunkDispatcherPool {
     private final ExecutorService executorService;
     private final FileRepository fileRepository;
     private final PriorityBlockingQueue<Request> requests = new PriorityBlockingQueue<>();
-    private final int MAX_SERVICABLE = 2056;
+    private static final int MAX_SERVICEABLE = 2056;
+    private static final int CHUNK_LENGTH = 512;
     private boolean isStopped = false;
 
     public ChunkDispatcherPool(FileRepository fileRepository) {
@@ -33,12 +33,12 @@ public class ChunkDispatcherPool {
         this.fileRepository = fileRepository;
     }
 
-    private static byte[][] generateChunks(byte[] source, int chunksize) {
-        byte[][] ret = new byte[(int) Math.ceil(source.length / (double) chunksize)][chunksize];
+    private static byte[][] generateChunks(byte[] source, int chunkSize) {
+        byte[][] ret = new byte[(int) Math.ceil(source.length / (double) chunkSize)][chunkSize];
         int start = 0;
         for (int i = 0; i < ret.length; i++) {
-            ret[i] = Arrays.copyOfRange(source, start, start + chunksize);
-            start += chunksize;
+            ret[i] = Arrays.copyOfRange(source, start, start + chunkSize);
+            start += chunkSize;
         }
         return ret;
     }
@@ -48,7 +48,7 @@ public class ChunkDispatcherPool {
         if (isStopped) {
             return;
         }
-        if (requests.size() >= MAX_SERVICABLE) {
+        if (requests.size() >= MAX_SERVICEABLE) {
             logger.error("Max serviceable number of request reached!");
             return;
         }
@@ -85,7 +85,7 @@ public class ChunkDispatcherPool {
             byte[] compressedData = byteStream.toByteArray();
 
             int chunkId = 0;
-            List<byte[]> chunks = Arrays.asList(generateChunks(compressedData, NetworkConstant.CHUNK_LENGTH));
+            List<byte[]> chunks = Arrays.asList(generateChunks(compressedData, CHUNK_LENGTH));
             int finalChunk = chunks.size();
             for (byte[] chunk : chunks) {
                 executorService.submit(new DispatchTask(fileId, (short) ++chunkId, finalChunk, chunk, request));
