@@ -34,17 +34,6 @@ public class ChunkDispatcherPool {
         this.fileRepository = fileRepository;
     }
 
-    private static byte[][] generateChunks(byte[] source, int chunkSize) {
-        byte[][] ret = new byte[(int) Math.ceil(source.length / (double) chunkSize)][chunkSize];
-        int start = 0;
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = Arrays.copyOfRange(source, start, start + chunkSize);
-            start += chunkSize;
-        }
-        return ret;
-    }
-
-
     public void submit(Request request, ChannelHandlerContext ctx) {
         if (isStopped) {
             return;
@@ -60,6 +49,7 @@ public class ChunkDispatcherPool {
             sendFile(request, ctx);
         });
     }
+
 
     /**
      * Handles gzip compression and breakup of file into chunks.
@@ -85,8 +75,8 @@ public class ChunkDispatcherPool {
 
             byte[] compressedData = byteStream.toByteArray();
 
+            List<byte[]> chunks = Arrays.asList(generateChunks(compressedData));
             int chunkId = 0;
-            List<byte[]> chunks = Arrays.asList(generateChunks(compressedData, CHUNK_LENGTH));
             int finalChunk = chunks.size();
             for (byte[] chunk : chunks) {
                 executorService.submit(new DispatchTask(fileId, (short) ++chunkId, finalChunk, chunk, ctx));
@@ -94,6 +84,16 @@ public class ChunkDispatcherPool {
         } catch (IOException | NullPointerException e) {
             logger.catching(e);
         }
+    }
+
+    private static byte[][] generateChunks(byte[] source) {
+        byte[][] ret = new byte[(int) Math.ceil(source.length / (double) CHUNK_LENGTH)][CHUNK_LENGTH];
+        int start = 0;
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = Arrays.copyOfRange(source, start, start + CHUNK_LENGTH);
+            start += CHUNK_LENGTH;
+        }
+        return ret;
     }
 
     public void halt() {
