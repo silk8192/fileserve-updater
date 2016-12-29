@@ -11,9 +11,9 @@ public class ClientChannelInitializer extends ChannelInitializer<SocketChannel> 
     @Override
     public void initChannel(SocketChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
+        pipeline.addLast(new InboundUpdateTableHandler());
         pipeline.addLast(new RequestEncoder());
         pipeline.addLast(new ResponseDecoder());
-        pipeline.addLast(new OutboundRequestHandler());
     }
 
 }

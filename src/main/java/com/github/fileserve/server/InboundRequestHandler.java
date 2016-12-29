@@ -2,6 +2,7 @@ package com.github.fileserve.server;
 
 import com.github.fileserve.FileRepository;
 import com.github.fileserve.net.Request;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.apache.logging.log4j.LogManager;
@@ -13,15 +14,22 @@ public class InboundRequestHandler extends SimpleChannelInboundHandler<Request> 
 
     private final Logger logger = LogManager.getLogger();
 
+    private final FileRepository fileRepository;
+
     private final ChunkDispatcherPool chunkDispatcherPool;
 
     public InboundRequestHandler(FileRepository fileRepository) {
+        this.fileRepository = fileRepository;
         chunkDispatcherPool = new ChunkDispatcherPool(fileRepository);
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         logger.info("Connection activated from: " + InetAddress.getLocalHost().toString());
+        byte[] buffer = fileRepository.getIndexData();
+        ByteBuf buf = ctx.alloc().buffer(buffer.length);
+        buf.writeBytes(buffer);
+        ctx.channel().writeAndFlush(buf);
     }
 
     @Override

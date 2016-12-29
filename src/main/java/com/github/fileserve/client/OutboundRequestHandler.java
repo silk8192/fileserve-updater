@@ -1,5 +1,6 @@
 package com.github.fileserve.client;
 
+import com.github.fileserve.UpdateTable;
 import com.github.fileserve.net.Response;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -9,14 +10,19 @@ import org.apache.logging.log4j.Logger;
 public class OutboundRequestHandler extends SimpleChannelInboundHandler<Response> {
 
     private static final Logger logger = LogManager.getLogger();
+    private ChunkReceiverPool chunkReceiverPool;
+    private FileRequesterService fileRequesterService;
+    private UpdateTable updateTable;
 
-    ChunkReceiverPool chunkReceiverPool = new ChunkReceiverPool();
-
-    FileRequesterService fileRequesterService = new FileRequesterService();
+    public OutboundRequestHandler(UpdateTable updateTable) {
+        this.updateTable = updateTable;
+        this.chunkReceiverPool = new ChunkReceiverPool();;
+    }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        logger.info("Connected to server! Sending requests...");
+    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+        logger.info("Sending requests...");
+        this.fileRequesterService = new FileRequesterService(updateTable, ctx.channel());
         fileRequesterService.start();
     }
 
@@ -30,4 +36,5 @@ public class OutboundRequestHandler extends SimpleChannelInboundHandler<Response
         logger.catching(cause);
         ctx.close();
     }
+
 }

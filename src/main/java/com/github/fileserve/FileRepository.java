@@ -30,13 +30,13 @@ public class FileRepository {
         this.path = path;
         try {
             Files.walk(path).filter(f -> Files.isRegularFile(f) && !f.toFile().getName().matches("index")).map(Path::toFile).forEach(files::add);
-            updateTable = new UpdateTable(this);
+            updateTable = new UpdateTable();
             indexFile = new File(Paths.get(path.toString() + "\\" + "index").toString());
             if (!Files.exists(indexFile.toPath())) {
                 logger.info("Missing update table! Generating...");
-                updateTable.generateTable();
+                updateTable.generateTable(path, indexFile, files);
             } else {
-                updateTable.parse();
+                updateTable.parse(getIndexData());
             }
         } catch (IOException e) {
             logger.catching(e);
@@ -55,6 +55,10 @@ public class FileRepository {
 
     public File getIndexFile() {
         return indexFile;
+    }
+
+    public byte[] getIndexData() throws IOException {
+        return Files.readAllBytes(indexFile.toPath());
     }
 
     public ArrayList<File> getFiles() {

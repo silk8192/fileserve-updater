@@ -1,6 +1,5 @@
 package com.github.fileserve.net.decoder;
 
-import com.github.fileserve.NetworkConstant;
 import com.github.fileserve.net.Response;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -15,7 +14,7 @@ public class ResponseDecoder extends ReplayingDecoder<Response> {
         int fileId = buf.readInt();
         short chunkId = buf.readShort();
         int finalChunk = buf.readInt();
-        byte[] bytes = new byte[NetworkConstant.CHUNK_LENGTH];
+        byte[] bytes = new byte[512];
         buf.readBytes(bytes);
         Response response = new Response(fileId, chunkId, finalChunk, bytes);
         list.add(response);

@@ -1,28 +1,26 @@
 package com.github.fileserve;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.zip.CRC32;
 
 public class UpdateTable {
 
     private final Logger logger = LogManager.getLogger();
-    private ArrayList<FileReference> fileReferences;
-    private FileRepository fileRepository;
 
-    public UpdateTable(FileRepository fileRepository) {
-        this.fileRepository = fileRepository;
-        fileReferences = new ArrayList<>(fileRepository.getNumberOfFiles());
+    private final ArrayList<FileReference> fileReferences;
+
+    public UpdateTable() {
+        this.fileReferences = new ArrayList<>();
     }
 
-    public void parse() throws IOException {
-        byte[] allData = FileUtils.readFileToByteArray(fileRepository.getIndexFile());
-        try (DataInputStream bais = new DataInputStream(new ByteArrayInputStream(allData))) {
+    public void parse(byte[] data) throws IOException {
+        try (DataInputStream bais = new DataInputStream(new ByteArrayInputStream(data))) {
             while (bais.available() > 0) {
                 int id = bais.readInt();
                 int totalBlockLength = bais.readInt();
@@ -32,17 +30,15 @@ public class UpdateTable {
                 byte[] name = new byte[nameLength];
                 bais.readFully(name);
                 String fileName = new String(name, StandardCharsets.UTF_8);
-                fileReferences.add(id - 1, new FileReference(id, fileName, crc, fileSize));
+                fileReferences.add(id, new FileReference(id, fileName, crc, fileSize));
             }
         }
     }
 
-    public void generateTable() {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); DataOutputStream dos = new DataOutputStream(new FileOutputStream(fileRepository.getIndexFile()))) {
-            for (int i = 0; i < fileRepository.getFiles().size(); i++) {
-                File file = fileRepository.getFiles().get(i);
-                if (file.isDirectory())
-                    return;
+    public void generateTable(Path cachePath, File indexFile, ArrayList<File> files) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); DataOutputStream dos = new DataOutputStream(new FileOutputStream(indexFile))) {
+            for (int i = 0; i < files.size(); i++) {
+                File file = files.get(i);
                 String name;
                 long crc = 0, fileSize;
                 try (InputStream in = new FileInputStream(file)) {
@@ -56,20 +52,24 @@ public class UpdateTable {
                 } catch (IOException ioe) {
                     ioe.printStackTrace();
                 }
-                String subDirectory = file.getParent().replace(fileRepository.getRepositoryPath().toString(), "");
+                String subDirectory = file.getParent().replace(cachePath.toString(), "");
                 if (subDirectory.isEmpty()) {
                     name = file.getName().replace("\\", "");
                 } else {
                     name = subDirectory.replace("\\", "") + "\\" + file.getName();
                 }
                 fileSize = file.length();
-                FileReference fileRef = new FileReference(i + 1, name, crc, fileSize);
+                FileReference fileRef = new FileReference(i, name, crc, fileSize);
                 baos.write(fileRef.toBytes());
             }
             dos.write(baos.toByteArray());
         } catch (IOException e) {
             logger.catching(e);
         }
+    }
+
+    public ArrayList<FileReference> getFileReferences() {
+        return fileReferences;
     }
 
 }
