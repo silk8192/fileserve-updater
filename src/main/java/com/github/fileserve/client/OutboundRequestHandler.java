@@ -16,7 +16,7 @@ public class OutboundRequestHandler extends SimpleChannelInboundHandler<Response
 
     public OutboundRequestHandler(UpdateTable updateTable) {
         this.updateTable = updateTable;
-        this.chunkReceiverPool = new ChunkReceiverPool();;
+        this.chunkReceiverPool = new ChunkReceiverPool(updateTable);
     }
 
     @Override
