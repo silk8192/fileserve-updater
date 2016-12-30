@@ -21,17 +21,18 @@ public class UpdateTable {
 
     public void parse(byte[] data) throws IOException {
         try (DataInputStream bais = new DataInputStream(new ByteArrayInputStream(data))) {
-            while (bais.available() > 0) {
+            do {
                 int id = bais.readInt();
                 int totalBlockLength = bais.readInt();
                 long fileSize = bais.readLong();
                 long crc = bais.readLong();
                 int nameLength = totalBlockLength - (Long.BYTES + Long.BYTES + Integer.BYTES + Integer.BYTES);
+                logger.info(fileSize);
                 byte[] name = new byte[nameLength];
                 bais.readFully(name);
                 String fileName = new String(name, StandardCharsets.UTF_8);
                 fileReferences.add(id, new FileReference(id, fileName, crc, fileSize));
-            }
+            } while (bais.available() > 0);
         }
     }
 

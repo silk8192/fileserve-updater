@@ -76,7 +76,7 @@ public class ChunkReceiverPool {
             ioe.printStackTrace();
         }
         if(fileRepository.getUpdateTable().getFileReferences().get(fileId).getCrc() != decompressedCrc) {
-            logger.error("Data corrupted for file: " + fileId, new IOException());
+            logger.error("Data corrupted for file: " + fileId + ", expected crc: " + fileRepository.getUpdateTable().getFileReferences().get(fileId).getCrc() + ", real" + decompressedCrc);
             return false;
         }
         logger.info("Received file: " + fileId);

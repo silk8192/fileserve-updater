@@ -27,7 +27,8 @@ public class InboundRequestHandler extends SimpleChannelInboundHandler<Request> 
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         logger.info("Connection activated from: " + InetAddress.getLocalHost().toString());
         byte[] buffer = fileRepository.getIndexData();
-        ByteBuf buf = ctx.alloc().buffer(buffer.length);
+        ByteBuf buf = ctx.alloc().buffer(Integer.BYTES + buffer.length );
+        buf.writeInt(buffer.length);
         buf.writeBytes(buffer);
         ctx.channel().writeAndFlush(buf);
     }
