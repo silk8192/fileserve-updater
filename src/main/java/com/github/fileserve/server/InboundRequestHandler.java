@@ -8,7 +8,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 public class InboundRequestHandler extends SimpleChannelInboundHandler<Request> {
 
@@ -25,12 +25,17 @@ public class InboundRequestHandler extends SimpleChannelInboundHandler<Request> 
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        logger.info("Connection activated from: " + InetAddress.getLocalHost().toString());
+        logger.info("Connection activated from: " + ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress());
         byte[] buffer = fileRepository.getIndexData();
         ByteBuf buf = ctx.alloc().buffer(Integer.BYTES + buffer.length );
         buf.writeInt(buffer.length);
         buf.writeBytes(buffer);
         ctx.channel().writeAndFlush(buf);
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        logger.info("Connection closed from: " + ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress());
     }
 
     @Override

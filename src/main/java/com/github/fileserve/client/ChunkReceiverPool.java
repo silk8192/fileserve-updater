@@ -1,7 +1,6 @@
 package com.github.fileserve.client;
 
 import com.github.fileserve.FileRepository;
-import com.github.fileserve.UpdateTable;
 import com.github.fileserve.net.Response;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
@@ -16,7 +15,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.zip.CRC32;
 import java.util.zip.GZIPInputStream;
 
 public class ChunkReceiverPool {
@@ -50,37 +48,11 @@ public class ChunkReceiverPool {
                 }
                 byte[] file = os.toByteArray();
                 byte[] decompressed = decompress(file);
-                if(verifyFile(response.getFileId(), decompressed)) {
-                    store(response.getFileId(), decompressed);
-                    responses.row(response.getFileId()).clear();
-                }
+                store(response.getFileId(), decompressed);
+                responses.row(response.getFileId()).clear();
+                logger.info("Received file: " + response.getFileId());
             });
         }
-    }
-
-    /**
-     * Verifies the received contents against the {@link UpdateTable} crc hash.
-     * @param decompressedFile The decompressed contents of all received chunks of a file put together.
-     */
-    private boolean verifyFile(int fileId, byte[] decompressedFile) {
-        long decompressedCrc = 0;
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(decompressedFile)) {
-            CRC32 crcMaker = new CRC32();
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = bais.read(buffer)) != -1) {
-                crcMaker.update(buffer, 0, bytesRead);
-            }
-            decompressedCrc = crcMaker.getValue();
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-        if(fileRepository.getUpdateTable().getFileReferences().get(fileId).getCrc() != decompressedCrc) {
-            logger.error("Data corrupted for file: " + fileId + ", expected crc: " + fileRepository.getUpdateTable().getFileReferences().get(fileId).getCrc() + ", real" + decompressedCrc);
-            return false;
-        }
-        logger.info("Received file: " + fileId);
-        return true;
     }
 
     /**

@@ -109,6 +109,10 @@ public class FileRepository {
         return updateTable;
     }
 
+    public long getCRC(int fileId) {
+        return this.updateTable.getFileReferences().get(fileId).getCrc();
+    }
+
     public byte[] getIndexData() throws IOException {
         return Files.readAllBytes(indexFile.toPath());
     }

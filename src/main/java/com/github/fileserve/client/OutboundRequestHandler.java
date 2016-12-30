@@ -1,7 +1,6 @@
 package com.github.fileserve.client;
 
 import com.github.fileserve.FileRepository;
-import com.github.fileserve.UpdateTable;
 import com.github.fileserve.net.Response;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -13,17 +12,17 @@ public class OutboundRequestHandler extends SimpleChannelInboundHandler<Response
     private static final Logger logger = LogManager.getLogger();
     private ChunkReceiverPool chunkReceiverPool;
     private FileRequesterService fileRequesterService;
-    private UpdateTable updateTable;
+    private FileRepository fileRepository;
 
     public OutboundRequestHandler(FileRepository fileRepository) {
-        this.updateTable = fileRepository.getUpdateTable();
+        this.fileRepository = fileRepository;
         this.chunkReceiverPool = new ChunkReceiverPool(fileRepository);
     }
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         logger.info("Sending requests...");
-        this.fileRequesterService = new FileRequesterService(updateTable, ctx.channel());
+        this.fileRequesterService = new FileRequesterService(fileRepository, ctx.channel());
         fileRequesterService.start();
     }
 
