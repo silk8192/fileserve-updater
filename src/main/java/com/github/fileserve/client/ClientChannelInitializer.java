@@ -8,10 +8,16 @@ import io.netty.channel.socket.SocketChannel;
 
 public class ClientChannelInitializer extends ChannelInitializer<SocketChannel> {
 
+    private final String cachePath;
+
+    public ClientChannelInitializer(String cachePath) {
+        this.cachePath = cachePath;
+    }
+
     @Override
     public void initChannel(SocketChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
-        pipeline.addLast(new InboundUpdateTableHandler());
+        pipeline.addLast(new InboundUpdateTableHandler(cachePath));
         pipeline.addLast(new RequestEncoder());
         pipeline.addLast(new ResponseDecoder());
     }

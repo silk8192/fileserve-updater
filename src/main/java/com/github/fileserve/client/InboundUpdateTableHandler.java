@@ -1,22 +1,25 @@
 package com.github.fileserve.client;
 
-import com.github.fileserve.UpdateTable;
+import com.github.fileserve.FileRepository;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.file.Paths;
 import java.util.List;
 
 public class InboundUpdateTableHandler extends ByteToMessageDecoder {
 
     private static Logger logger = LogManager.getLogger();
 
-    private final UpdateTable updateTable;
+    private FileRepository fileRepository;
 
-    public InboundUpdateTableHandler() {
-        updateTable = new UpdateTable();
+    private final String cachePath;
+
+    public InboundUpdateTableHandler(String cachePath) {
+        this.cachePath = cachePath;
     }
 
     @Override
@@ -31,10 +34,10 @@ public class InboundUpdateTableHandler extends ByteToMessageDecoder {
         logger.info("Receiving reference table...");
         byte[] bytes = new byte[byteBuf.readableBytes()];
         byteBuf.readBytes(bytes);
-        updateTable.parse(bytes);
-        logger.info("Received " + updateTable.getFileReferences().size() + " file references!");
+        fileRepository = new FileRepository(Paths.get(cachePath), bytes);
+        logger.info("Received " + fileRepository.getUpdateTable().getFileReferences().size() + " file references!");
         ctx.pipeline().remove(this);
-        ctx.pipeline().addLast(new OutboundRequestHandler(updateTable));
+        ctx.pipeline().addLast(new OutboundRequestHandler(fileRepository));
     }
 
     @Override

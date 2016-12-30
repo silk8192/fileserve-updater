@@ -1,5 +1,6 @@
 package com.github.fileserve.client;
 
+import com.github.fileserve.FileRepository;
 import com.github.fileserve.UpdateTable;
 import com.github.fileserve.net.Response;
 import io.netty.channel.ChannelHandlerContext;
@@ -14,9 +15,9 @@ public class OutboundRequestHandler extends SimpleChannelInboundHandler<Response
     private FileRequesterService fileRequesterService;
     private UpdateTable updateTable;
 
-    public OutboundRequestHandler(UpdateTable updateTable) {
-        this.updateTable = updateTable;
-        this.chunkReceiverPool = new ChunkReceiverPool(updateTable);
+    public OutboundRequestHandler(FileRepository fileRepository) {
+        this.updateTable = fileRepository.getUpdateTable();
+        this.chunkReceiverPool = new ChunkReceiverPool(fileRepository);
     }
 
     @Override

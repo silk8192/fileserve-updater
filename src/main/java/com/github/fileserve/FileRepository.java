@@ -25,13 +25,12 @@ public class FileRepository {
     private UpdateTable updateTable;
 
     private File indexFile;
-
     public FileRepository(Path path) {
         this.path = path;
         try {
             Files.walk(path).filter(f -> Files.isRegularFile(f) && !f.toFile().getName().matches("index")).map(Path::toFile).forEach(files::add);
-            updateTable = new UpdateTable();
-            indexFile = new File(Paths.get(path.toString() + "\\" + "index").toString());
+            this.updateTable = new UpdateTable();
+            this.indexFile = new File(Paths.get(path.toString() + "\\" + "index").toString());
             if (!Files.exists(indexFile.toPath())) {
                 logger.info("Missing update table! Generating...");
                 updateTable.generateTable(path, indexFile, files);
@@ -45,6 +44,24 @@ public class FileRepository {
         }
     }
 
+    /**
+     * Create a new {@link FileRepository} with given index file data.
+     * @param path
+     * @param indexFileData
+     */
+    public FileRepository(Path path, byte[] indexFileData) {
+        this.path = path;
+        this.updateTable = new UpdateTable();
+        this.indexFile = new File(Paths.get(path.toString() + "\\" + "index").toString());
+        try {
+            updateTable.parse(indexFileData);
+            Files.write(indexFile.toPath(), indexFileData);
+            Files.walk(path).filter(f -> Files.isRegularFile(f) && !f.toFile().getName().matches("index")).map(Path::toFile).forEach(files::add);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public Optional<File> locate(int fileId) {
         Optional<File> file = Optional.of(files.get(fileId));
         if(fileId > files.size() || !file.isPresent()) {
@@ -55,6 +72,10 @@ public class FileRepository {
 
     public File getIndexFile() {
         return indexFile;
+    }
+
+    public UpdateTable getUpdateTable() {
+        return updateTable;
     }
 
     public byte[] getIndexData() throws IOException {

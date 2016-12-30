@@ -1,5 +1,6 @@
 package com.github.fileserve.client;
 
+import com.github.fileserve.FileRepository;
 import com.github.fileserve.UpdateTable;
 import com.github.fileserve.net.Response;
 import com.google.common.collect.HashBasedTable;
@@ -8,9 +9,8 @@ import com.google.common.collect.Table;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -23,11 +23,11 @@ public class ChunkReceiverPool {
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
     private Table<Integer, Short, Response> responses = HashBasedTable.create();
-    private UpdateTable updateTable;
+    private FileRepository fileRepository;
     private static final Logger logger = LogManager.getLogger();
 
-    public ChunkReceiverPool(UpdateTable updateTable) {
-        this.updateTable = updateTable;
+    public ChunkReceiverPool(FileRepository fileRepository) {
+        this.fileRepository = fileRepository;
     }
 
     public void submit(Response response) {
@@ -49,12 +49,11 @@ public class ChunkReceiverPool {
                     logger.catching(e);
                 }
                 byte[] file = os.toByteArray();
-                try {
-                    verifyFile(response.getFileId(), decompress(file));
-                } catch (Exception e) {
-                    e.printStackTrace();
+                byte[] decompressed = decompress(file);
+                if(verifyFile(response.getFileId(), decompressed)) {
+                    store(response.getFileId(), decompressed);
+                    responses.row(response.getFileId()).clear();
                 }
-                responses.row(response.getFileId()).clear();
             });
         }
     }
@@ -63,7 +62,7 @@ public class ChunkReceiverPool {
      * Verifies the received contents against the {@link UpdateTable} crc hash.
      * @param decompressedFile The decompressed contents of all received chunks of a file put together.
      */
-    private void verifyFile(int fileId, byte[] decompressedFile) {
+    private boolean verifyFile(int fileId, byte[] decompressedFile) {
         long decompressedCrc = 0;
         try (ByteArrayInputStream bais = new ByteArrayInputStream(decompressedFile)) {
             CRC32 crcMaker = new CRC32();
@@ -76,22 +75,46 @@ public class ChunkReceiverPool {
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
-        if(updateTable.getFileReferences().get(fileId).getCrc() != decompressedCrc)
+        if(fileRepository.getUpdateTable().getFileReferences().get(fileId).getCrc() != decompressedCrc) {
             logger.error("Data corrupted for file: " + fileId, new IOException());
-        logger.info("Recieved file: " + fileId);
+            return false;
+        }
+        logger.info("Received file: " + fileId);
+        return true;
     }
 
-    public static byte[] decompress(final byte[] input) throws Exception{
+    /**
+     * This method stores files as uncompressed files into the client cache directory.
+     * @param fileId The id of the file being stored, used for referencing with the {@link FileRepository}.
+     * @param fileData The raw file data.
+     */
+    private void store(int fileId, byte[] fileData) {
+        try {
+            File newFile = Paths.get(fileRepository.getRepositoryPath().toString(),
+                    fileRepository.getUpdateTable().getFileReferences().get(fileId).getName()).toFile();
+            newFile.getParentFile().mkdirs();
+            try (DataOutputStream dos = new DataOutputStream(new FileOutputStream(newFile))) {
+                dos.write(fileData);
+            }
+        } catch (IOException e) {
+            logger.catching(e);
+        }
+    }
+
+    public static byte[] decompress(final byte[] input) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (ByteArrayInputStream bin = new ByteArrayInputStream(input);
              GZIPInputStream gzipper = new GZIPInputStream(bin)) {
             byte[] buffer = new byte[1024];
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
             int len;
             while ((len = gzipper.read(buffer)) > 0) {
                 out.write(buffer, 0, len);
             }
             gzipper.close();
             out.close();
+        } catch (Exception e) {
+            logger.catching(e);
+        } finally {
             return out.toByteArray();
         }
     }

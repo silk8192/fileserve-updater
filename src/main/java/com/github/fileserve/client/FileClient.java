@@ -5,18 +5,24 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.InetSocketAddress;
 
 public class FileClient {
 
     private final String host;
-
     private final int port;
+    private final String cachePath;
+    private static final Logger logger = LogManager.getLogger();
 
-    public FileClient(String host, int port) {
+
+    public FileClient(String host, int port, String cachePath) {
+        logger.info("Initializing client...");
         this.host = host;
         this.port = port;
+        this.cachePath = cachePath;
     }
 
     public void start() throws Exception {
@@ -25,7 +31,7 @@ public class FileClient {
             Bootstrap b = new Bootstrap();
             b.group(group).channel(NioSocketChannel.class)
                     .remoteAddress(new InetSocketAddress(host, port))
-                    .handler(new ClientChannelInitializer());
+                    .handler(new ClientChannelInitializer(cachePath));
             ChannelFuture f = b.connect(host, port).sync();
             f.channel().closeFuture().sync();
         } finally {
@@ -34,7 +40,14 @@ public class FileClient {
     }
 
     public static void main(String[] args) throws Exception {
-        new FileClient("127.0.0.1", 1337).start();
+        try {
+            if (args.length != 3)
+                throw new Exception("Invalid arguments, requires host:String, port:int, and, cachePath:String");
+            else
+                new FileClient(args[0], Integer.parseInt(args[1]), args[2]).start();
+        } catch (Throwable t) {
+            logger.error("Error while starting the server.", t);
+        }
     }
 
 }
