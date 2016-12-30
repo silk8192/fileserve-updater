@@ -3,6 +3,7 @@ package com.github.fileserve;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.zip.CRC32;
 
 public class FileRepository {
 
@@ -36,11 +38,40 @@ public class FileRepository {
                 updateTable.generateTable(path, indexFile, files);
             } else {
                 updateTable.parse(getIndexData());
+                compareDifferences();
             }
         } catch (IOException e) {
             logger.catching(e);
         } finally {
             logger.info("Loaded " + files.size() + " files.");
+        }
+    }
+
+    private void compareDifferences() {
+        boolean updateFlag = false;
+        if(updateTable.getFileReferences().size() != files.size())
+            updateFlag = true;
+        for(int i = 0; i < files.size(); i++) {
+            long decompressedCrc = 0;
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(Files.readAllBytes(files.get(i).toPath()))) {
+                CRC32 crcMaker = new CRC32();
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = bais.read(buffer)) != -1) {
+                    crcMaker.update(buffer, 0, bytesRead);
+                }
+                decompressedCrc = crcMaker.getValue();
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+            if(decompressedCrc != updateTable.getFileReferences().get(i).getCrc()) {
+                updateFlag = true;
+            }
+        }
+        if(updateFlag) {
+            logger.info("Files have been updated, Recreating update file!");
+            indexFile.delete();
+            updateTable.generateTable(path, indexFile, files);
         }
     }
 

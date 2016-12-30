@@ -27,7 +27,6 @@ public class UpdateTable {
                 long fileSize = bais.readLong();
                 long crc = bais.readLong();
                 int nameLength = totalBlockLength - (Long.BYTES + Long.BYTES + Integer.BYTES + Integer.BYTES);
-                logger.info(fileSize);
                 byte[] name = new byte[nameLength];
                 bais.readFully(name);
                 String fileName = new String(name, StandardCharsets.UTF_8);
