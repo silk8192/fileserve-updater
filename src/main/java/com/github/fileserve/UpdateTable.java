@@ -1,5 +1,6 @@
 package com.github.fileserve;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -7,7 +8,6 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.zip.CRC32;
 
 public class UpdateTable {
 
@@ -40,25 +40,14 @@ public class UpdateTable {
             for (int i = 0; i < files.size(); i++) {
                 File file = files.get(i);
                 String name;
-                long crc = 0, fileSize;
-                try (InputStream in = new FileInputStream(file)) {
-                    CRC32 crcMaker = new CRC32();
-                    byte[] buffer = new byte[8192];
-                    int bytesRead;
-                    while ((bytesRead = in.read(buffer)) != -1) {
-                        crcMaker.update(buffer, 0, bytesRead);
-                    }
-                    crc = crcMaker.getValue();
-                } catch (IOException ioe) {
-                    ioe.printStackTrace();
-                }
+                long crc = FileUtils.checksumCRC32(file);
+                long fileSize = file.length();
                 String subDirectory = file.getParent().replace(cachePath.toString(), "");
                 if (subDirectory.isEmpty()) {
                     name = file.getName().replace("\\", "");
                 } else {
                     name = subDirectory.replace("\\", "") + "\\" + file.getName();
                 }
-                fileSize = file.length();
                 FileReference fileRef = new FileReference(i, name, crc, fileSize);
                 baos.write(fileRef.toBytes());
             }
@@ -66,6 +55,10 @@ public class UpdateTable {
         } catch (IOException e) {
             logger.catching(e);
         }
+    }
+
+    public long getCRC(int fileId) {
+        return this.getFileReferences().get(fileId).getCrc();
     }
 
     public ArrayList<FileReference> getFileReferences() {

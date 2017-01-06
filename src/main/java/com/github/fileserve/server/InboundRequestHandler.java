@@ -3,6 +3,7 @@ package com.github.fileserve.server;
 import com.github.fileserve.FileRepository;
 import com.github.fileserve.net.Request;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.apache.logging.log4j.LogManager;
@@ -30,7 +31,11 @@ public class InboundRequestHandler extends SimpleChannelInboundHandler<Request> 
         ByteBuf buf = ctx.alloc().buffer(Integer.BYTES + buffer.length );
         buf.writeInt(buffer.length);
         buf.writeBytes(buffer);
-        ctx.channel().writeAndFlush(buf);
+        ctx.channel().writeAndFlush(buf).addListener((ChannelFutureListener) channelFuture -> {
+            if(channelFuture.isSuccess()) {
+                logger.info("Sent update table data!");
+            }
+        });
     }
 
     @Override

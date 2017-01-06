@@ -1,9 +1,9 @@
 package com.github.fileserve;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,7 +11,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.zip.CRC32;
 
 public class FileRepository {
 
@@ -53,16 +52,10 @@ public class FileRepository {
             updateFlag = true;
         for(int i = 0; i < files.size(); i++) {
             long decompressedCrc = 0;
-            try (ByteArrayInputStream bais = new ByteArrayInputStream(Files.readAllBytes(files.get(i).toPath()))) {
-                CRC32 crcMaker = new CRC32();
-                byte[] buffer = new byte[8192];
-                int bytesRead;
-                while ((bytesRead = bais.read(buffer)) != -1) {
-                    crcMaker.update(buffer, 0, bytesRead);
-                }
-                decompressedCrc = crcMaker.getValue();
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
+            try {
+                decompressedCrc = FileUtils.checksumCRC32(files.get(i));
+            } catch (IOException e) {
+                e.printStackTrace();
             }
             if(decompressedCrc != updateTable.getFileReferences().get(i).getCrc()) {
                 updateFlag = true;
@@ -88,6 +81,7 @@ public class FileRepository {
             updateTable.parse(indexFileData);
             Files.write(indexFile.toPath(), indexFileData);
             Files.walk(path).filter(f -> Files.isRegularFile(f) && !f.toFile().getName().matches("index")).map(Path::toFile).forEach(files::add);
+            logger.info("Found " + files.size() + "local files");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -95,34 +89,15 @@ public class FileRepository {
 
     public Optional<File> locate(int fileId) {
         Optional<File> file = Optional.of(files.get(fileId));
-        if(fileId > files.size() || !file.isPresent()) {
-            logger.error("Could not locate file or malformed file request!", new ArrayIndexOutOfBoundsException());
-        }
         return file;
-    }
-
-    public File getIndexFile() {
-        return indexFile;
     }
 
     public UpdateTable getUpdateTable() {
         return updateTable;
     }
 
-    public long getCRC(int fileId) {
-        return this.updateTable.getFileReferences().get(fileId).getCrc();
-    }
-
     public byte[] getIndexData() throws IOException {
         return Files.readAllBytes(indexFile.toPath());
-    }
-
-    public ArrayList<File> getFiles() {
-        return files;
-    }
-
-    public int getNumberOfFiles() {
-        return files.size();
     }
 
     public Path getRepositoryPath() {

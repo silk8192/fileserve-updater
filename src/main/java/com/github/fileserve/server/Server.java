@@ -44,7 +44,8 @@ public class Server {
                     .channel(NioServerSocketChannel.class)
                     .childHandler(new ServerChannelInitializer(fileRepository))
                     .option(ChannelOption.SO_BACKLOG, 128)
-                    .childOption(ChannelOption.SO_KEEPALIVE, true);
+                    .childOption(ChannelOption.SO_KEEPALIVE, true)
+                    .childOption(ChannelOption.TCP_NODELAY, true);
 
             logger.info("Binding to port " + port);
             ChannelFuture f = bootstrap.bind(port).sync();

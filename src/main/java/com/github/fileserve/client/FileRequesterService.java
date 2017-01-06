@@ -4,15 +4,13 @@ import com.github.fileserve.FileRepository;
 import com.github.fileserve.net.Request;
 import com.google.common.util.concurrent.AbstractService;
 import io.netty.channel.Channel;
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.IntStream;
 
 public class FileRequesterService extends AbstractService implements Runnable {
 
@@ -21,6 +19,7 @@ public class FileRequesterService extends AbstractService implements Runnable {
     private Channel channel;
     private final AtomicBoolean running = new AtomicBoolean(true);
     private Logger logger = LogManager.getLogger();
+    private final PriorityBlockingQueue<Request> pendingRequests = new PriorityBlockingQueue<>();
 
     FileRequesterService(FileRepository fileRepository, Channel channel) {
         this.fileRepository = fileRepository;
@@ -30,19 +29,19 @@ public class FileRequesterService extends AbstractService implements Runnable {
     @Override
     public void run() {
         while (running.get()) {
-            channel.eventLoop().submit(() -> {
-                for (int fileId = 0; fileId < this.fileRepository.getUpdateTable().getFileReferences().size(); fileId++) {
-                    logger.info("Requesting file: " + fileId);
-                    channel.writeAndFlush(new Request(fileId, (byte) 1));
-                }
-            });
-            //finally stop the FileRequester thread
-            running.set(false);
+            while(!pendingRequests.isEmpty()) {
+                channel.writeAndFlush(pendingRequests.poll());
+            }
+            doStop();
         }
     }
 
     @Override
     protected void doStart() {
+        for (int fileId = 0; fileId < this.fileRepository.getUpdateTable().getFileReferences().size(); fileId++) {
+            logger.info("Requesting file: " + fileId);
+            pendingRequests.put(new Request(fileId, (byte) 1));
+        }
         service.submit(this);
     }
 
