@@ -1,6 +1,6 @@
 package com.github.fileserve.server;
 
-import com.github.fileserve.FileRepository;
+import com.github.fileserve.fs.FileRepository;
 import com.github.fileserve.net.Request;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFutureListener;

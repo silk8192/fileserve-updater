@@ -1,6 +1,6 @@
 package com.github.fileserve.client;
 
-import com.github.fileserve.FileRepository;
+import com.github.fileserve.fs.FileRepository;
 import com.github.fileserve.net.Response;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;

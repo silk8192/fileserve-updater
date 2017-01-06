@@ -1,6 +1,6 @@
 package com.github.fileserve.client;
 
-import com.github.fileserve.FileRepository;
+import com.github.fileserve.fs.FileRepository;
 import com.github.fileserve.net.Request;
 import com.google.common.util.concurrent.AbstractService;
 import io.netty.channel.Channel;

@@ -1,6 +1,6 @@
 package com.github.fileserve.server;
 
-import com.github.fileserve.FileRepository;
+import com.github.fileserve.fs.FileRepository;
 import com.google.common.base.Preconditions;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;

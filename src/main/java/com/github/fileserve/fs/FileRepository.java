@@ -1,4 +1,4 @@
-package com.github.fileserve;
+package com.github.fileserve.fs;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;

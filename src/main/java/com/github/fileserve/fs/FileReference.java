@@ -1,4 +1,4 @@
-package com.github.fileserve;
+package com.github.fileserve.fs;
 
 import java.nio.ByteBuffer;
 

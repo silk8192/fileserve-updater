@@ -1,6 +1,6 @@
 package com.github.fileserve.server;
 
-import com.github.fileserve.FileRepository;
+import com.github.fileserve.fs.FileRepository;
 import com.github.fileserve.net.decoder.RequestDecoder;
 import com.github.fileserve.net.encoder.ResponseEncoder;
 import io.netty.channel.ChannelInitializer;
