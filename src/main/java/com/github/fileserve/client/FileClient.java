@@ -1,5 +1,6 @@
 package com.github.fileserve.client;
 
+import com.google.common.base.Preconditions;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
@@ -39,12 +40,10 @@ public class FileClient {
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         try {
-            if (args.length != 3)
-                throw new Exception("Invalid arguments, requires host:String, port:int, and, cachePath:String");
-            else
-                new FileClient(args[0], Integer.parseInt(args[1]), args[2]).start();
+            Preconditions.checkArgument(args.length == 3, "Invalid arguments, requires host:String, port:int, and, cachePath:String");
+            new FileClient(args[0], Integer.parseInt(args[1]), args[2]).start();
         } catch (Throwable t) {
             logger.error("Error while starting the server.", t);
         }

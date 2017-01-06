@@ -1,6 +1,7 @@
 package com.github.fileserve.server;
 
 import com.github.fileserve.FileRepository;
+import com.google.common.base.Preconditions;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
@@ -26,10 +27,8 @@ public class Server {
 
     public static void main(String[] args) {
         try {
-            if (args.length != 2)
-                throw new Exception("Invalid arguments, requires port:int and cachePath:String");
-            else
-                new Server(Integer.parseInt(args[0]), args[1]).init();
+            Preconditions.checkArgument(args.length == 2, "Invalid arguments, requires port:int and cachePath:String");
+            new Server(Integer.parseInt(args[0]), args[1]).init();
         } catch (Throwable t) {
             logger.error("Error while starting the server.", t);
         }
