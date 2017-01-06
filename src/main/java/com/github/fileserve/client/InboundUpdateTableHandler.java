@@ -14,8 +14,6 @@ public class InboundUpdateTableHandler extends ReplayingDecoder {
 
     private static Logger logger = LogManager.getLogger();
 
-    private FileRepository fileRepository;
-
     private final String cachePath;
 
     public InboundUpdateTableHandler(String cachePath) {
@@ -34,7 +32,7 @@ public class InboundUpdateTableHandler extends ReplayingDecoder {
         logger.info("Receiving reference table...");
         byte[] bytes = new byte[byteBuf.readInt()];
         byteBuf.readBytes(bytes);
-        fileRepository = new FileRepository(Paths.get(cachePath), bytes);
+        FileRepository fileRepository = new FileRepository(Paths.get(cachePath), bytes);
         logger.info("Received " + fileRepository.getUpdateTable().getFileReferences().size() + " file references!");
         ctx.pipeline().remove(this);
         ctx.pipeline().addLast(new OutboundRequestHandler(fileRepository));

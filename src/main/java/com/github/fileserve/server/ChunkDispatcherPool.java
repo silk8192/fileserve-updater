@@ -22,7 +22,7 @@ import java.util.zip.GZIPOutputStream;
 public class ChunkDispatcherPool {
 
     private final Logger logger = LogManager.getLogger();
-    private final ExecutorService executorService;
+    private final ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private final FileRepository fileRepository;
     private final PriorityBlockingQueue<Request> requests = new PriorityBlockingQueue<>();
     private static final int MAX_SERVICEABLE = 2056;
@@ -30,7 +30,6 @@ public class ChunkDispatcherPool {
     private boolean isStopped = false;
 
     public ChunkDispatcherPool(FileRepository fileRepository) {
-        executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         this.fileRepository = fileRepository;
     }
 

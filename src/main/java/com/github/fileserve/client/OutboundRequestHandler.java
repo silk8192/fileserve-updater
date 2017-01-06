@@ -11,7 +11,6 @@ public class OutboundRequestHandler extends SimpleChannelInboundHandler<Response
 
     private static final Logger logger = LogManager.getLogger();
     private ChunkReceiverPool chunkReceiverPool;
-    private FileRequesterService fileRequesterService;
     private FileRepository fileRepository;
 
     public OutboundRequestHandler(FileRepository fileRepository) {
@@ -22,8 +21,8 @@ public class OutboundRequestHandler extends SimpleChannelInboundHandler<Response
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         logger.info("Sending requests...");
-        this.fileRequesterService = new FileRequesterService(fileRepository, ctx.channel());
-        fileRequesterService.start();
+        FileRequesterService fileRequesterService = new FileRequesterService(fileRepository, ctx.channel());
+        fileRequesterService.doStart();
     }
 
     @Override
