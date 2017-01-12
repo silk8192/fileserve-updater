@@ -21,12 +21,13 @@ public class UpdateTable {
 
     public void parse(byte[] data) throws IOException {
         try (DataInputStream bais = new DataInputStream(new ByteArrayInputStream(data))) {
+            int numberOfFiles = bais.readInt();
+            logger.info(numberOfFiles);
             do {
                 int id = bais.readInt();
-                int totalBlockLength = bais.readInt();
                 long fileSize = bais.readLong();
                 long crc = bais.readLong();
-                int nameLength = totalBlockLength - (Long.BYTES + Long.BYTES + Integer.BYTES + Integer.BYTES);
+                int nameLength = bais.readInt();
                 byte[] name = new byte[nameLength];
                 bais.readFully(name);
                 String fileName = new String(name, StandardCharsets.UTF_8);
@@ -37,6 +38,7 @@ public class UpdateTable {
 
     public void generateTable(Path cachePath, File indexFile, ArrayList<File> files) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); DataOutputStream dos = new DataOutputStream(new FileOutputStream(indexFile))) {
+            dos.writeInt(files.size());
             for (int i = 0; i < files.size(); i++) {
                 File file = files.get(i);
                 String name;

@@ -49,9 +49,9 @@ public class FileReference {
         int totalLength = Integer.BYTES + Integer.BYTES + Long.BYTES + Long.BYTES + name.getBytes().length;
         ByteBuffer reference = ByteBuffer.allocate(totalLength);
         reference.putInt(id);
-        reference.putInt(totalLength);
         reference.putLong(fileSize);
         reference.putLong(crc);
+        reference.putInt(name.getBytes().length);
         reference.put(name.getBytes());
         return (byte[]) reference.flip().array();
     }
